@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  padding: 20px;
+  background: rgb(76, 75, 76);
+  font-family: Arial, sans-serif;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  .countdown {
+    font-size: 36px;
+  }
+
+  .bet-btn {
+    font-size: 12px;
+    padding: 8px 15px;
+  }
+
+  .game-controls button {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+canvas {
+  border: 3px solid #fff;
+  border-radius: 10px;
+  background: #1a1a2e;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.game-controls {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.betting-section {
+  background: rgba(255,255,255,0.1);
+  padding: 20px;
+  border-radius: 15px;
+  margin: 20px 0;
+}
+
+.bet-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.bet-btn {
+  background: #4ecdc4;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.bet-btn:hover {
+  background: #45b7b8;
+  transform: translateY(-2px);
+}
+
+.bet-btn.selected {
+  background: #ff6b6b;
+  transform: scale(1.1);
+}
+
+button {
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  margin: 0 10px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: #ff5252;
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  background: #666;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  font-size: 18px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  background: rgba(255,255,255,0.1);
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+
+.game-status {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 15px 0;
+  min-height: 30px;
+}
+
+.countdown {
+  font-size: 48px;
+  color: #ff6b6b;
+  margin: 20px 0;
+  text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+}
+
+.physics-info {
+  background: rgba(255,255,255,0.1);
+  padding: 15px;
+  border-radius: 10px;
+  margin: 20px 0;
+  text-align: left;
+}
