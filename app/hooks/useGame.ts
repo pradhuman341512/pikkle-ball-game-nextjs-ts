@@ -1,8 +1,7 @@
-'use client';
-
 import { useState, useCallback } from 'react';
 
 export type GameState = 'betting' | 'countdown' | 'playing' | 'result';
+export type RiskLevel = 'Low' | 'Medium' | 'High';
 
 export interface GameData {
   balance: number;
@@ -11,6 +10,9 @@ export interface GameData {
   gameState: GameState;
   status: string;
   countdown: number;
+  selectedRows: number;
+  riskLevel: RiskLevel;
+  isAutoMode: boolean;
 }
 
 export function useGame() {
@@ -19,83 +21,138 @@ export function useGame() {
     selectedBet: 0,
     totalWon: 0,
     gameState: 'betting',
-    status: 'Select your bet amount to start!',
+    status: 'Place your bet to start!',
     countdown: 0,
+    selectedRows: 8,
+    riskLevel: 'Low',
+    isAutoMode: false,
   });
 
-  const selectBet = useCallback((amount: number) => {
-    if (gameData.gameState !== 'betting' || gameData.balance < amount) return;
+  const toggleMode = useCallback(() => {
+    setGameData(prev => ({
+      ...prev,
+      isAutoMode: !prev.isAutoMode,
+      status: !prev.isAutoMode ? 'Auto mode enabled' : 'Manual mode enabled'
+    }));
+  }, []);
+
+  const setRiskLevel = useCallback((risk: RiskLevel) => {
+    if (gameData.gameState !== 'betting') return;
+    
+    setGameData(prev => ({
+      ...prev,
+      riskLevel: risk,
+      status: `${risk} risk selected`
+    }));
+  }, [gameData.gameState]);
+
+  const setRows = useCallback((rows: number) => {
+    if (gameData.gameState !== 'betting') return;
+    
+    setGameData(prev => ({
+      ...prev,
+      selectedRows: rows,
+      status: `${rows} rows selected`
+    }));
+  }, [gameData.gameState]);
+
+  const setBet = useCallback((amount: string | number) => {
+    // Convert to number and validate
+    const betAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    
+    // Check for invalid number
+    if (isNaN(betAmount) || betAmount < 0) {
+      setGameData(prev => ({
+        ...prev,
+        selectedBet: 0,
+        status: 'Invalid bet amount'
+      }));
+      return;
+    }
+
+    if (gameData.gameState !== 'betting' || gameData.balance < betAmount) {
+      setGameData(prev => ({
+        ...prev,
+        status: betAmount > gameData.balance ? 'Insufficient balance' : 'Cannot place bet now'
+      }));
+      return;
+    }
 
     setGameData(prev => ({
       ...prev,
-      selectedBet: amount,
-      status: `Bet selected: $${amount}. Ready to play!`,
+      selectedBet: betAmount,
+      status: `Bet set to $${betAmount.toFixed(2)}`
     }));
   }, [gameData.gameState, gameData.balance]);
 
   const startGame = useCallback(() => {
-    if (gameData.gameState !== 'betting' || gameData.selectedBet === 0 || gameData.balance < gameData.selectedBet) return;
+    if (gameData.gameState !== 'betting' || gameData.selectedBet === 0 || gameData.balance < gameData.selectedBet) {
+      setGameData(prev => ({
+        ...prev,
+        status: 'Cannot start game - check bet amount and balance'
+      }));
+      return;
+    }
 
+    // Deduct bet amount from balance when game starts
     setGameData(prev => ({
       ...prev,
-      balance: prev.balance - prev.selectedBet,
-      gameState: 'countdown',
-      status: 'Get ready...',
-      countdown: 3,
+      balance: Number((prev.balance - prev.selectedBet).toFixed(2)),
+      gameState: 'playing',
+      status: 'Ball dropped! Good luck!'
     }));
-
-    // Start countdown
-    let countdownValue = 3;
-    const countdownInterval = setInterval(() => {
-      countdownValue--;
-      if (countdownValue > 0) {
-        setGameData(prev => ({ ...prev, countdown: countdownValue }));
-      } else {
-        clearInterval(countdownInterval);
-        setGameData(prev => ({
-          ...prev,
-          gameState: 'playing',
-          status: 'Ball in play! Watch it fall...',
-          countdown: 0,
-        }));
-      }
-    }, 1000);
   }, [gameData.gameState, gameData.selectedBet, gameData.balance]);
 
-  const handleGameResult = useCallback((result: number, slotIndex: number) => {
-    const multiplier = [0.5, 1, 2, 5, 2, 1, 0.5][slotIndex];
+  const handleGameResult = useCallback((winnings: number, slotIndex: number, multiplier: number) => {
+    console.log(`Ball landed in slot ${slotIndex + 1} with ${multiplier}x multiplier`);
+    console.log(`Bet: ${gameData.selectedBet.toFixed(2)}, Winnings: ${winnings.toFixed(2)}`);
     
     setGameData(prev => {
-      const newBalance = prev.balance + result;
-      const newTotalWon = prev.totalWon + Math.max(0, result - prev.selectedBet);
+      // The winnings already include the multiplied amount
+      // Balance was already reduced when game started, so just add winnings
+      const newBalance = Number((prev.balance + winnings).toFixed(2));
+      
+      // Calculate profit: winnings - original bet
+      const profit = Number((winnings - prev.selectedBet).toFixed(2));
+      
+      // Only add to totalWon if there's actual profit
+      const newTotalWon = profit > 0 ? Number((prev.totalWon + profit).toFixed(2)) : prev.totalWon;
       
       let status;
-      if (result > prev.selectedBet) {
-        status = `🎉 You won $${result}! (${multiplier}x multiplier)`;
-      } else if (result === prev.selectedBet) {
-        status = `💰 You broke even! Got your $${result} back!`;
+      if (winnings > prev.selectedBet) {
+        status = `🎉 Won! Got ${winnings.toFixed(2)} (${multiplier}x) - Profit: ${profit.toFixed(2)}`;
+      } else if (winnings === prev.selectedBet) {
+        status = `⚖️ Break even! Got back your ${winnings.toFixed(2)} bet`;
       } else {
-        status = `💸 You won $${result}. Better luck next time!`;
+        status = `💸 Lost ${(prev.selectedBet - winnings).toFixed(2)}. Got back ${winnings.toFixed(2)}`;
       }
+
+      // Log the calculation for verification
+      console.log(`Original Balance: ${(prev.balance + prev.selectedBet).toFixed(2)}`);
+      console.log(`Bet Deducted: ${prev.selectedBet.toFixed(2)}`);
+      console.log(`Balance After Bet: ${prev.balance.toFixed(2)}`);
+      console.log(`Winnings Added: ${winnings.toFixed(2)}`);
+      console.log(`New Balance: ${newBalance.toFixed(2)}`);
+      console.log(`Profit: ${profit.toFixed(2)}`);
 
       return {
         ...prev,
         balance: newBalance,
         totalWon: newTotalWon,
         gameState: 'result',
-        status,
+        status
       };
     });
 
-    // Reset for next game after delay
+    // Return to betting state after showing result
     setTimeout(() => {
       setGameData(prev => ({
         ...prev,
-        gameState: prev.balance > 0 ? 'betting' : 'betting',
-        status: prev.balance > 0 ? 'Select your bet amount for next round!' : 'Game Over! Click Reset to play again.',
+        gameState: 'betting',
+        status: 'Ready for next bet!'
       }));
     }, 3000);
-  }, []);
+  }, [gameData.selectedBet]);
 
   const resetGame = useCallback(() => {
     setGameData({
@@ -103,16 +160,22 @@ export function useGame() {
       selectedBet: 0,
       totalWon: 0,
       gameState: 'betting',
-      status: 'Select your bet amount to start!',
+      status: 'Game reset! Place your bet to start!',
       countdown: 0,
+      selectedRows: 8,
+      riskLevel: 'Low',
+      isAutoMode: false,
     });
   }, []);
 
   return {
     gameData,
-    selectBet,
+    toggleMode,
+    setRiskLevel,
+    setRows,
+    setBet,
     startGame,
     handleGameResult,
-    resetGame,
+    resetGame
   };
 }

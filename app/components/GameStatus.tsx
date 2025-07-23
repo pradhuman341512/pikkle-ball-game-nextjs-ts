@@ -7,9 +7,13 @@ interface GameStatusProps {
 
 export default function GameStatus({ status, countdown }: GameStatusProps) {
   return (
-    <>
-      <div className="game-status">{status}</div>
-      {countdown > 0 && <div className="countdown">{countdown}</div>}
-    </>
+    <div className="text-center mb-6">
+      <div className="text-lg font-medium text-gray-300 mb-2">{status}</div>
+      {countdown > 0 && (
+        <div className="text-5xl font-bold text-red-500 animate-pulse">
+          {countdown}
+        </div>
+      )}
+    </div>
   );
 }
